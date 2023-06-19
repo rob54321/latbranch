@@ -14,11 +14,18 @@ sub cloneg {
 	my($directory) = $_[0];
 
 	# project name is project_name.git
+	# remove directory
+	system("rm -rf $directory");
+	
 	# pname = project_name
 	# project name was passed as a command line parameter
 	my $pname = $ARGV[0];
-
-	system("git clone -n -v https://github.com/rob54321/$pname $directory") or die "Could not clone $pname: $!\n";
+	# check a repository name was given on the command line.
+	# initialise-linux.git is given as initialise-linux
+	die "No project name given on command line\n" unless $ARGV[0];
+	my $rc = system("git clone -n -v https://github.com/rob54321/$pname" . ".git" . " $directory");
+	# die if unsuccessful
+	die "Error cloning $pname.git:$!\n" unless $rc == 0;
 }
 
 # sub to get the remote name
@@ -33,7 +40,7 @@ sub getremote {
 # sub to determine latest commit of latest branch
 # and checkout the latest branch
 # sub to get latest branch with latest commit checked out
-# lbranch(ref_to_%binfo, ref to @branch, repository_name)
+# lbranch(ref_to_%binfo, ref to @branch)
 sub lbranch { 
 	# get parameters
 	my ($rbinfo, $rbranch) = @_;
@@ -49,7 +56,7 @@ sub lbranch {
 
 		# each line contains commit, refs/heads/branch_name
 		# get branch 
-		my ${$rbranch} = (split (/\//, $line[$i]))[2];
+		my $branch = (split (/\//, $line[$i]))[2];
 		chomp($branch);
 
 		# make an ordered list of branches, newest first.
@@ -59,13 +66,18 @@ sub lbranch {
 		# get the commit for the branch
 		$rbinfo->{$branch} = (split(/\s+/, $line[$i]))[0];
 	}
+
+	# checkout latest branch so software is available to place in the linux repo
+	my $rc = system("git checkout $rbranch->[0]");
+	die ("Could not checkout $rbranch->[0] from $rname:$!\n") unless $rc == 0;
+	
 	# print results from newest to oldest
-	for (my $i = 0; $i <= $#branch; $i++) {
-		print "$branch[$i] => $binfo{$branch[$i]}\n";
+	for (my $i = 0; $i <= $#{$rbranch}; $i++) {
+		print "$rbranch->[$i] => $rbinfo->{$rbranch->[$i]}\n";
 	}
 
 	# print remote name and latest branch
-	print "remote: $gname\t latest branch: $branch[0]\n";
+	print "remote: $rname\t latest branch: $rbranch->[0]\n";
 }
 
 #####################################################################
@@ -87,9 +99,10 @@ my $targetdir = "/home/robert/tmp/gproject";
 unlink $targetdir;
 
 # clone the project
-clone $targetdirectory;
+cloneg $targetdir;
 
 # change directory to target directory after clone
-chdir $targetdirectory;
+chdir $targetdir;
 
-
+# get latest branch, check it out 
+lbranch (\%binfo, \@branch);
