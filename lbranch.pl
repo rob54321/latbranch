@@ -1,8 +1,10 @@
 #!/usr/bin/perl
-# this script determines the branch with the latest branch
-# in a cloned project. The current branch may not be 
-# the latest branch. The latest branch is checked out
-# so the files will be from the last commit of the latest branch.
+# this script reads the command line parameter as
+# the project name. It clones this project, determines
+# the latest branch from the server and checks it out.
+# this is done so builddebiantree can have an option
+# where the latest code can be placed in a debian package
+# without knowing the branch name or remote name.
 
 use strict;
 use warnings;
@@ -40,11 +42,8 @@ sub getremote {
 # sub to determine latest commit of latest branch
 # and checkout the latest branch
 # sub to get latest branch with latest commit checked out
-# lbranch(ref_to_%binfo, ref to @branch)
+# lbranch no parameters passed or returned
 sub lbranch { 
-	# get parameters
-	my ($rbinfo, $rbranch) = @_;
-
 	# get remote name
 	my $rname = getremote;
 	
@@ -52,47 +51,23 @@ sub lbranch {
 	# line 0 will be the latest head, line 1 next etc
 	my @line = `git ls-remote --heads --sort=-committerdate $rname`;
 
-	for (my $i =0; $i<= $#line; $i++) {
-
-		# each line contains commit, refs/heads/branch_name
-		# get branch 
-		my $branch = (split (/\//, $line[$i]))[2];
-		chomp($branch);
-
-		# make an ordered list of branches, newest first.
-		# a hash has no order
-		push(@{$rbranch}, $branch);
-		
-		# get the commit for the branch
-		$rbinfo->{$branch} = (split(/\s+/, $line[$i]))[0];
-	}
+	# each line contains "commit refs/heads/branch_name"
+	# the first line will have the newest date
+	# get branch latest branch, it will appear first on the list
+	my $lbranch = (split (/\//, $line[0]))[2];
+	chomp($lbranch);
 
 	# checkout latest branch so software is available to place in the linux repo
-	my $rc = system("git checkout $rbranch->[0]");
-	die ("Could not checkout $rbranch->[0] from $rname:$!\n") unless $rc == 0;
+	my $rc = system("git checkout $lbranch");
+	die ("Could not checkout $lbranch from $rname:$!\n") unless $rc == 0;
 	
-	# print results from newest to oldest
-	for (my $i = 0; $i <= $#{$rbranch}; $i++) {
-		print "$rbranch->[$i] => $rbinfo->{$rbranch->[$i]}\n";
-	}
-
 	# print remote name and latest branch
-	print "remote: $rname\t latest branch: $rbranch->[0]\n";
+	print "remote: $rname\t latest branch: $lbranch\n";
 }
 
 #####################################################################
 # main entry
 #####################################################################
-
-# binfo contains (branch_name => commit_hash)
-# there is no order in a hash
-# hence @branch is used to keep an ordered list
-# of branches. Newest to oldest.
-my %binfo;
-
-# an ordered list of branches
-# newest first. a hash has no order
-my @branch = ();
 
 # target directory to clone into
 my $targetdir = "/home/robert/tmp/gproject";
@@ -105,4 +80,4 @@ cloneg $targetdir;
 chdir $targetdir;
 
 # get latest branch, check it out 
-lbranch (\%binfo, \@branch);
+lbranch;
