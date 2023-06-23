@@ -10,8 +10,8 @@ use strict;
 use warnings;
 
 # sub to clone a git project
-# cloneg (targetdirectory)
-sub cloneg {
+# gitclone (targetdirectory)
+sub gitclone {
 	# get parameters
 	my($directory) = $_[0];
 
@@ -74,7 +74,7 @@ my $targetdir = "/home/robert/tmp/gproject";
 unlink $targetdir;
 
 # clone the project
-cloneg $targetdir;
+gitclone $targetdir;
 
 # change directory to target directory after clone
 chdir $targetdir;
