@@ -10,6 +10,10 @@ use strict;
 use warnings;
 
 # sub to clone a git project
+# so that the latest branch can be determined
+# the option --sort=-committerdate requires
+# all objects to be cloned so depth=1 and --single-branch
+# cannot be used.
 # gitclone (targetdirectory)
 sub gitclone {
 	# get parameters
